@@ -228,7 +228,8 @@ export default function BatchCreatePage() {
       )
       setCompletedCount(validRows.length)
     } catch (err) {
-      const message = err instanceof Error ? err.message : batchCreateCopy.execution.transactionFailedFallback
+      const message =
+        err instanceof Error ? err.message : batchCreateCopy.execution.transactionFailedFallback
       failures.push(message)
     }
 
@@ -270,11 +271,6 @@ export default function BatchCreatePage() {
             </Button>
             <Button variant="secondary" asChild>
               <Link href="/app/create">{batchCreateCopy.singleStream}</Link>
-            <Button variant="outline" nativeButton={false} asChild>
-              <Link href="/app">Return to dashboard</Link>
-            </Button>
-            <Button variant="secondary" nativeButton={false} asChild>
-              <Link href="/app/create">Single stream</Link>
             </Button>
           </div>
         </div>
@@ -362,7 +358,9 @@ export default function BatchCreatePage() {
                   <thead>
                     <tr className="border-b border-border text-muted-foreground">
                       <th className="py-2 pr-3">{batchCreateCopy.preview.tableHeaders.index}</th>
-                      <th className="py-2 pr-3">{batchCreateCopy.preview.tableHeaders.recipient}</th>
+                      <th className="py-2 pr-3">
+                        {batchCreateCopy.preview.tableHeaders.recipient}
+                      </th>
                       <th className="py-2 pr-3">{batchCreateCopy.preview.tableHeaders.amount}</th>
                       <th className="py-2 pr-3">{batchCreateCopy.preview.tableHeaders.start}</th>
                       <th className="py-2 pr-3">{batchCreateCopy.preview.tableHeaders.end}</th>
@@ -374,7 +372,11 @@ export default function BatchCreatePage() {
                     {rows.map((row) => (
                       <tr
                         key={row.index}
-                        className={row.errors.length > 0 ? 'bg-destructive/5 dark:bg-destructive/10' : undefined}
+                        className={
+                          row.errors.length > 0
+                            ? 'bg-destructive/5 dark:bg-destructive/10'
+                            : undefined
+                        }
                       >
                         <td className="py-3 pr-3 font-mono text-xs text-muted-foreground">
                           {row.index}
@@ -386,7 +388,9 @@ export default function BatchCreatePage() {
                         <td className="py-3 pr-3">{formatTimestamp(row.startTime)}</td>
                         <td className="py-3 pr-3">{formatTimestamp(row.endTime)}</td>
                         <td className="py-3 pr-3">
-                          {row.cliffTime ? formatTimestamp(row.cliffTime) : batchCreateCopy.preview.noCliff}
+                          {row.cliffTime
+                            ? formatTimestamp(row.cliffTime)
+                            : batchCreateCopy.preview.noCliff}
                           {row.cliffAmount !== null ? ` / ${row.cliffAmount.toString()}` : ''}
                         </td>
                         <td className="py-3 pr-3">
@@ -453,12 +457,12 @@ export default function BatchCreatePage() {
                   ) : (
                     <Upload className="size-4" />
                   )}
-                  {executing ? batchCreateCopy.execution.executingButton : batchCreateCopy.execution.executeButton}
+                  {executing
+                    ? batchCreateCopy.execution.executingButton
+                    : batchCreateCopy.execution.executeButton}
                 </Button>
                 <Button type="button" variant="outline" asChild>
                   <Link href="/app/create">{batchCreateCopy.execution.reviewSingleStream}</Link>
-                <Button type="button" variant="outline" nativeButton={false} asChild>
-                  <Link href="/app/create">Review single stream</Link>
                 </Button>
               </div>
             </div>
