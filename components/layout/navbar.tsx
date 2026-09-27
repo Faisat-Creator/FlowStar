@@ -82,7 +82,7 @@ export function Navbar() {
               <span className="hidden sm:inline">New stream</span>
             </Button>
           ) : (
-            <Button asChild variant="ghost" size="sm" className="gap-1.5">
+            <Button nativeButton={false} asChild variant="ghost" size="sm" className="gap-1.5">
               <Link href="/app/create">
                 <Plus className="size-4" />
                 <span className="hidden sm:inline">New stream</span>

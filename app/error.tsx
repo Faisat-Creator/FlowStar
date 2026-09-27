@@ -136,7 +136,7 @@ export default function AppError({ error, reset }: Props) {
             <Button variant="secondary" onClick={() => router.refresh()}>
               Refresh
             </Button>
-            <Button variant="outline" asChild>
+            <Button variant="outline" nativeButton={false} asChild>
               <Link href="/">Go home</Link>
             </Button>
           </div>

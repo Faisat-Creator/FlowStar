@@ -104,7 +104,7 @@ describe('Button', () => {
   describe('asChild prop', () => {
     it('renders child element when asChild is true', () => {
       const { container } = render(
-        <Button asChild>
+        <Button nativeButton={false} asChild>
           <a href="/test">Link Button</a>
         </Button>
       )
@@ -116,7 +116,7 @@ describe('Button', () => {
 
     it('applies Button styles to child element when asChild is true', () => {
       const { container } = render(
-        <Button variant="secondary" size="sm" asChild>
+        <Button variant="secondary" size="sm" nativeButton={false} asChild>
           <a href="/test">Link Button</a>
         </Button>
       )

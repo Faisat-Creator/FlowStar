@@ -3,6 +3,10 @@
 Welcome! This guide helps you get from zero to a running local development
 environment. Thanks for your interest in contributing!
 
+## Code of Conduct
+
+By participating in this project, you agree to follow the [Code of Conduct](./CODE_OF_CONDUCT.md).
+
 ---
 
 ## Prerequisites

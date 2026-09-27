@@ -21,7 +21,7 @@ export function EmptyStreams({
         {description}
       </p>
       {showCreate && (
-        <Button asChild className="mt-5 gap-1.5">
+        <Button nativeButton={false} asChild className="mt-5 gap-1.5">
           <Link href="/app/create">
             <Plus className="size-4" />
             Create a stream

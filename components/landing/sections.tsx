@@ -175,7 +175,7 @@ export function CTA() {
           setup, no custody, no code.
         </p>
         <div className="relative mt-8 flex justify-center">
-          <Button asChild size="lg">
+          <Button nativeButton={false} asChild size="lg">
             <Link href="/app/create">
               Create a stream
               <ArrowRight className="size-4" />

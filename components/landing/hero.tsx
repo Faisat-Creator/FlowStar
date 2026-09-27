@@ -79,7 +79,7 @@ export function LandingHeader() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button asChild size="sm">
+          <Button nativeButton={false} asChild size="sm">
             <Link href="/app">
               Open app
               <ArrowRight className="size-4" />
@@ -114,13 +114,13 @@ export function Hero() {
             withdraw anytime, cancel anytime.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Button asChild size="lg">
+            <Button nativeButton={false} asChild size="lg">
               <Link href="/app/create">
                 Create a stream
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="secondary">
+            <Button nativeButton={false} asChild size="lg" variant="secondary">
               <Link href="/app">Open dashboard</Link>
             </Button>
           </div>
