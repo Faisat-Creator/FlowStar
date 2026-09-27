@@ -295,6 +295,34 @@ const ERROR_PATTERNS: Array<{
   },
 ]
 
+/**
+ * Maps a raw error value thrown during a Soroban transaction (or any other
+ * operation) to a structured {@link MappedError} with a user-friendly message,
+ * an actionable suggestion, an {@link ErrorCategory}, and the original error
+ * string as `details`.
+ *
+ * **Matching strategy:**
+ * The function iterates through `ERROR_PATTERNS` in declaration order. Each
+ * pattern is either a `RegExp` (tested with `RegExp.test()`) or a plain
+ * `string` (matched with a case-insensitive `includes()` check). The first
+ * matching pattern wins. Patterns are ordered so that specific Soroban
+ * contract error codes (`Error(Contract, #N)`) appear before broader
+ * catch-all patterns (e.g. "insufficient balance").
+ *
+ * If no pattern matches, a generic `"Transaction failed"` fallback is
+ * returned with `category: "contract"` and the raw message as `details`.
+ *
+ * **Known limitation:** The numeric contract error codes (#1–#20) are mapped
+ * to the `StreamError` enum in `contracts/streaming/src/lib.rs`. If the
+ * on-chain enum is extended with new codes, this mapping must be updated
+ * manually (tracked in issues #231 and #287).
+ *
+ * @param raw - The thrown value. Accepts an `Error` instance (uses
+ *              `.message`) or any other type (coerced to a string via
+ *              `String()`).
+ * @returns A {@link MappedError} with `message`, `suggestion`, `category`,
+ *          and `details` (the original raw message).
+ */
 export function mapError(raw: unknown): MappedError {
   const rawMessage = raw instanceof Error ? raw.message : String(raw)
 
@@ -316,6 +344,14 @@ export function mapError(raw: unknown): MappedError {
   }
 }
 
+/**
+ * Returns a short, human-readable label for an {@link ErrorCategory} suitable
+ * for display in UI headings or badges (e.g. `"Input error"`,
+ * `"Network error"`).
+ *
+ * @param category - The error category to label.
+ * @returns A display-ready string for the given category.
+ */
 export function categoryLabel(category: ErrorCategory): string {
   switch (category) {
     case 'user':
@@ -329,6 +365,17 @@ export function categoryLabel(category: ErrorCategory): string {
   }
 }
 
+/**
+ * Returns a Tailwind CSS text-colour class pair for the given
+ * {@link ErrorCategory}, one for light mode and one for dark mode (e.g.
+ * `"text-amber-600 dark:text-amber-400"`).
+ *
+ * Intended to be applied directly to a JSX element's `className` prop so that
+ * error labels are colour-coded consistently across the UI.
+ *
+ * @param category - The error category to colour.
+ * @returns A Tailwind CSS class string for the matching text colour.
+ */
 export function categoryColor(category: ErrorCategory): string {
   switch (category) {
     case 'user':
