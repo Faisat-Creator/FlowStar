@@ -23,6 +23,7 @@ contracts/**/test_snapshots/
 
 # Vitest snapshots and coverage
 *.snap
+**/__snapshots__/
 coverage/
 
 # TypeScript build info cache
