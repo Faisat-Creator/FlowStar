@@ -18,6 +18,7 @@ jobs:
           node-version: 22
           cache: npm
 
+      - run: npm ci
       - run: npm ci --legacy-peer-deps
 
       - run: npm test
@@ -36,6 +37,7 @@ jobs:
           node-version: 22
           cache: npm
 
+      - run: npm ci
       - run: npm ci --legacy-peer-deps
 
       - name: Install Playwright browsers
