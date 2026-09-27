@@ -13,6 +13,21 @@ import { readCachedStreams, writeCachedStreams } from '@/lib/streams-cache'
 // re-fetch without prop-drilling or global state.
 type Listener = () => void
 const listeners = new Set<Listener>()
+
+/**
+ * Signals every mounted {@link useStreams} and {@link useStream} instance to
+ * immediately re-fetch stream data from the contract.
+ *
+ * Call this after any write operation (create, withdraw, cancel, top-up, etc.)
+ * so that the UI reflects the updated state without waiting for the next
+ * poll tick. Uses a simple in-module listener set — no global state manager
+ * or prop-drilling required.
+ *
+ * @example
+ * // Inside a component that just created a stream:
+ * await contractCreateStream(...)
+ * invalidateStreams()
+ */
 export function invalidateStreams() {
   listeners.forEach((l) => l())
 }
@@ -52,6 +67,41 @@ interface UseStreamsOptions {
 // How long the tab must have been hidden before we show "Refreshing…"
 const STALE_THRESHOLD_MS = 3_000
 
+/**
+ * Fetches and subscribes to all streams associated with the currently
+ * connected wallet address, split into sent and received categories.
+ *
+ * **Return shape:**
+ * - `sent` — streams where the connected wallet is the sender.
+ * - `received` — streams where the connected wallet is the recipient.
+ * - `all` — unfiltered array of every stream returned by the contract.
+ * - `loading` — `true` while the first (or any subsequent) fetch is in
+ *   flight and no data is available yet.
+ * - `isRefreshingAfterHidden` — `true` for the duration of the re-fetch that
+ *   fires when the browser tab becomes visible again after being hidden for at
+ *   least 3 seconds. Use this flag to show a non-blocking "Refreshing…"
+ *   indicator without wiping out the existing stream list.
+ * - `stale` — `true` when `all` is being served from the offline
+ *   {@link readCachedStreams} cache rather than a live network response.
+ *   This can happen when the browser is offline or when a network-level
+ *   fetch fails — FlowStar falls back to the last known data so the user
+ *   sees something instead of an empty dashboard.
+ * - `lastUpdated` — Unix timestamp (ms) of when the most recent successful
+ *   (or cached) fetch completed, or `null` if no data has been loaded yet.
+ * - `refetch` — Imperative callback to trigger an immediate re-fetch; also
+ *   called automatically on mount, on address/network change, when
+ *   {@link invalidateStreams} fires, when the tab regains focus, and on
+ *   every poll tick.
+ *
+ * **Polling:** Enabled by default every 30 seconds. Polling is paused while
+ * the tab is hidden and resumes on visibility. Pass `enablePolling: false` or
+ * a custom `pollInterval` (ms) via `options` to override.
+ *
+ * @param options - Optional configuration for the polling behaviour.
+ * @param options.enablePolling  - Whether to poll for updates (default `true`).
+ * @param options.pollInterval   - Polling interval in ms (default `30000`).
+ * @returns A {@link CategorizedStreams} object.
+ */
 export function useStreams(options?: UseStreamsOptions): CategorizedStreams {
   const { address } = useWallet()
   const { network } = useNetwork()
@@ -248,6 +298,24 @@ export function useStreams(options?: UseStreamsOptions): CategorizedStreams {
   }
 }
 
+/**
+ * Fetches a single stream by its contract ID and re-fetches whenever
+ * {@link invalidateStreams} is called.
+ *
+ * Unlike {@link useStreams}, this hook does not poll. It fires one fetch on
+ * mount and again whenever the stream `id`, the active network, or an
+ * invalidation signal changes. Use `refetch` to trigger a manual refresh
+ * after a write.
+ *
+ * **Return shape:**
+ * - `stream` — The {@link StreamData} for the given ID, or `null` while
+ *   loading or if the stream was not found.
+ * - `loading` — `true` while a fetch is in flight.
+ * - `refetch` — Imperative callback to trigger an immediate re-fetch.
+ *
+ * @param id - The contract stream ID to fetch.
+ * @returns An object with `stream`, `loading`, and `refetch`.
+ */
 export function useStream(id: string): {
   stream: StreamData | null
   loading: boolean
