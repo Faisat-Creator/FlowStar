@@ -12,6 +12,14 @@ export interface RecurringRule {
 
 const STORAGE_KEY = 'flowstar:recurring-streams'
 
+/**
+ * Reads all recurring stream rules persisted in `localStorage`.
+ *
+ * Safe to call in SSR contexts — returns an empty array when `window` is
+ * unavailable or when the stored value cannot be parsed.
+ *
+ * @returns Array of {@link RecurringRule} objects, or `[]` if none are stored.
+ */
 export function getRecurringRules(): RecurringRule[] {
   if (typeof window === 'undefined') return []
   try {
@@ -24,6 +32,16 @@ export function getRecurringRules(): RecurringRule[] {
   }
 }
 
+/**
+ * Persists a recurring stream rule to `localStorage`, replacing any existing
+ * rule for the same `streamId`.
+ *
+ * At most 25 rules are kept; the oldest entries are dropped when the list
+ * exceeds that limit. No-ops in SSR environments.
+ *
+ * @param rule - The {@link RecurringRule} to save. An existing rule with the
+ *               same `streamId` is overwritten.
+ */
 export function saveRecurringRule(rule: RecurringRule): void {
   if (typeof window === 'undefined') return
   const rules = getRecurringRules().filter((item) => item.streamId !== rule.streamId)
@@ -31,12 +49,30 @@ export function saveRecurringRule(rule: RecurringRule): void {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(rules.slice(0, 25)))
 }
 
+/**
+ * Removes the recurring rule associated with the given stream ID from
+ * `localStorage`. No-ops if no matching rule exists or in SSR environments.
+ *
+ * @param streamId - The contract stream ID whose recurring rule should be
+ *                   deleted.
+ */
 export function removeRecurringRule(streamId: string): void {
   if (typeof window === 'undefined') return
   const rules = getRecurringRules().filter((item) => item.streamId !== streamId)
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(rules))
 }
 
+/**
+ * Returns all recurring rules whose `nextRunAt` timestamp is in the future,
+ * sorted in ascending order by `nextRunAt` (soonest renewal first).
+ *
+ * Rules whose `nextRunAt` is in the past (i.e. overdue or already processed)
+ * are excluded. Use {@link getRecurringRules} to retrieve the full unfiltered
+ * list.
+ *
+ * @returns Subset of stored rules that are pending renewal, ordered by
+ *          scheduled time.
+ */
 export function getUpcomingRenewals(): RecurringRule[] {
   return getRecurringRules()
     .filter((rule) => rule.nextRunAt > Date.now())
@@ -99,6 +135,20 @@ export function buildNextRunAt(startTime: number, cadence: Exclude<RecurrenceCad
   return date.getTime()
 }
 
+/**
+ * Builds a new {@link RecurringRule} preset from an existing stream and
+ * immediately persists it via {@link saveRecurringRule}.
+ *
+ * The `nextRunAt` timestamp is calculated from `Date.now()` using
+ * {@link buildNextRunAt}, and `lastCreatedAt` is set to the current time.
+ *
+ * @param stream  - Minimal stream data needed to populate the rule: the
+ *                  stream's `id`, `recipient`, `token.symbol`, and
+ *                  `depositedAmount`.
+ * @param cadence - How often the stream should renew: `"weekly"`,
+ *                  `"monthly"`, or `"quarterly"`.
+ * @returns The newly created and saved {@link RecurringRule}.
+ */
 export function createRenewalPreset(stream: { id: string; recipient: string; token: { symbol: string }; depositedAmount: bigint }, cadence: Exclude<RecurrenceCadence, 'none'>): RecurringRule {
   const preset = {
     streamId: stream.id,
