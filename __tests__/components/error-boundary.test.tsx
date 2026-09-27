@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { ComponentErrorBoundary } from '@/components/error-boundary/component-error-boundary'
 import { PageErrorBoundary } from '@/components/error-boundary/page-error-boundary'
 import { SectionErrorBoundary } from '@/components/error-boundary/section-error-boundary'
+import { captureError } from '@/lib/sentry'
 
 vi.mock('@/lib/sentry', () => ({ captureError: vi.fn() }))
 
@@ -26,6 +27,7 @@ function Safe() {
 let consoleErrorSpy: ReturnType<typeof vi.spyOn>
 beforeEach(() => {
   consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+  vi.mocked(captureError).mockClear()
 })
 afterEach(() => {
   consoleErrorSpy.mockRestore()
@@ -49,6 +51,32 @@ describe('ComponentErrorBoundary', () => {
     )
     expect(screen.getByText('Failed to render widget')).toBeInTheDocument()
     expect(screen.queryByText('all good')).not.toBeInTheDocument()
+  })
+
+  it('renders its fallback instead of crashing the surrounding tree when a child throws', () => {
+    render(
+      <div>
+        <span>sibling content</span>
+        <ComponentErrorBoundary label="widget">
+          <Boom />
+        </ComponentErrorBoundary>
+      </div>,
+    )
+    expect(screen.getByText('sibling content')).toBeInTheDocument()
+    expect(screen.getByText('Failed to render widget')).toBeInTheDocument()
+  })
+
+  it('reports the thrown error to captureError with the component label', () => {
+    render(
+      <ComponentErrorBoundary label="widget">
+        <Boom />
+      </ComponentErrorBoundary>,
+    )
+    expect(captureError).toHaveBeenCalledTimes(1)
+    expect(captureError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'boom' }),
+      expect.objectContaining({ operation: 'component_render:widget' }),
+    )
   })
 
   it('clears the error state and re-renders children on retry', () => {
@@ -90,6 +118,34 @@ describe('SectionErrorBoundary', () => {
       </SectionErrorBoundary>,
     )
     expect(screen.getByText('Stream list failed to load')).toBeInTheDocument()
+  })
+
+  it('renders the section fallback without taking down the surrounding page', () => {
+    render(
+      <div>
+        <nav>site navigation</nav>
+        <SectionErrorBoundary sectionName="Stream list">
+          <Boom />
+        </SectionErrorBoundary>
+        <footer>page footer</footer>
+      </div>,
+    )
+    expect(screen.getByText('site navigation')).toBeInTheDocument()
+    expect(screen.getByText('page footer')).toBeInTheDocument()
+    expect(screen.getByText('Stream list failed to load')).toBeInTheDocument()
+  })
+
+  it('reports the thrown error to captureError with the section name', () => {
+    render(
+      <SectionErrorBoundary sectionName="Stream list">
+        <Boom />
+      </SectionErrorBoundary>,
+    )
+    expect(captureError).toHaveBeenCalledTimes(1)
+    expect(captureError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'boom' }),
+      expect.objectContaining({ operation: 'section_render:Stream list' }),
+    )
   })
 
   it('clears the error state and re-renders children on retry', () => {
@@ -152,6 +208,31 @@ describe('PageErrorBoundary', () => {
     )
     expect(screen.getByText('Something went wrong')).toBeInTheDocument()
     expect(screen.getByText('boom')).toBeInTheDocument()
+  })
+
+  it('renders a full-screen fallback with a dashboard link and a reload button', () => {
+    render(
+      <PageErrorBoundary>
+        <Boom />
+      </PageErrorBoundary>,
+    )
+    const dashboardLink = screen.getByRole('link', { name: 'Go to dashboard' })
+    expect(dashboardLink).toBeInTheDocument()
+    expect(dashboardLink).toHaveAttribute('href', '/app')
+    expect(screen.getByRole('button', { name: 'Reload page' })).toBeInTheDocument()
+  })
+
+  it('reports the thrown error to captureError', () => {
+    render(
+      <PageErrorBoundary>
+        <Boom />
+      </PageErrorBoundary>,
+    )
+    expect(captureError).toHaveBeenCalledTimes(1)
+    expect(captureError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'boom' }),
+      expect.objectContaining({ operation: 'page_render' }),
+    )
   })
 
   it('clears the error state and re-renders children when "Try again" is clicked', () => {
